@@ -1,0 +1,87 @@
+#!/bin/bash
+# For documentation and license, see https://github.com/pjeby/loco
+
+fn_exists() { [[ "$(type -t "$1")" == "function" ]] ; }
+fn_copy()   { body="$(declare -f $1)"; eval "$2 ${body#$1}"; }
+
+_loco_usage() { loco_error "Usage: $LOCO_COMMAND command args..."; }
+_loco_error() { echo "$@" >&2; exit 1; }
+_loco_cmd() { echo "$LOCO_NAME.$1"; }
+_loco_exec() { loco_error "Unrecognized command: $1"; }
+_loco_exists() { [ -n "$(type -t "$1")" ] ; }
+
+# loco_findup file startdir -- outputs full path to found file, or nothing
+_loco_findup() {
+    local f="${1-$LOCO_FILE}"
+    local d="${2-$LOCO_PWD}"
+    if [ "$d" == "/" ]; then [ -f "/$f" ] && echo "/$f"
+    elif [ -f "$d/$f" ]; then echo "$d/$f"
+    else ${FUNCNAME[0]} "$f" "$(dirname "$d")"
+    fi
+}
+
+_loco_do() {
+    [ -z "$1" ] && loco_usage   # No command given, exit w/usage
+    local cmd="$(loco_cmd "$1")"
+    [ -z "$cmd" ] && loco_usage   # Unrecognized command, exit w/usage
+
+    if loco_exists "$cmd"; then
+        # Command, alias, function, or builtin exists
+        shift; "$cmd" "$@"
+    else
+        # Invoke the default command interpreter
+        loco_exec "$@"
+    fi
+}
+
+_loco_findproject() {
+    proj="${LOCO_PROJECT-$(loco_findup "$LOCO_FILE" "$LOCO_PWD")}"
+    if [ -z "$proj" ]; then loco_error "Can't find $LOCO_FILE here"; else echo $proj; fi
+}
+
+_loco_preconfig() { true; }
+_loco_postconfig() { true; }
+_loco_findroot() { dirname "$LOCO_PROJECT"; }
+_loco_loadproject() { cd "$LOCO_ROOT";  $LOCO_LOAD "$1"; }
+
+# Initialize default function implementations
+for f in $(declare -F|cut -d' ' -f3|grep ^_loco_); do
+    fn_exists "${f#_}" || fn_copy "$f" "${f#_}"
+done
+
+# Clear all LOCO_*  variables before beginning
+lvars=$(env -0|cut -z -d '=' -f1|strings|grep ^LOCO_)
+[ -z "$lvars" ] || "unset $lvars"
+
+# Find our configuration, exposing relevant paths and defaults
+
+loco_preconfig "$@"
+
+if [[ $0 != ${BASH_SOURCE[0]} ]]; then
+    LOCO_SCRIPT="${LOCO_SCRIPT-${BASH_SOURCE[1]}}"
+else
+    LOCO_SCRIPT="${LOCO_SCRIPT-${BASH_SOURCE[0]}}"
+fi
+
+LOCO_COMMAND="${LOCO_COMMAND-$(basename "$LOCO_SCRIPT")}"
+LOCO_NAME="${LOCO_NAME-${LOCO_COMMAND}}"
+LOCO_PWD="${LOCO_PWD-$PWD}"
+
+LOCO_SITE_CONFIG="${LOCO_SITE_CONFIG-/etc/$LOCO_NAME/config}"
+[ -f "$LOCO_SITE_CONFIG" ] && . "$LOCO_SITE_CONFIG"
+
+LOCO_RC="${LOCO_RC-.${LOCO_NAME}rc}"
+LOCO_USER_CONFIG="${LOCO_USER_CONFIG-$HOME/$LOCO_RC}"
+[ -f "$LOCO_USER_CONFIG" ] && . "$LOCO_USER_CONFIG"
+
+LOCO_FILE="${LOCO_FILE-.$LOCO_NAME}"
+LOCO_LOAD="${LOCO_LOAD-source}"
+
+loco_postconfig "$@"
+
+# Finally, run the actual command(s)
+LOCO_PROJECT="${LOCO_PROJECT-$(loco_findproject "$@")}"
+LOCO_ROOT="${LOCO_ROOT-$(loco_findroot "$@")}"
+loco_loadproject "$LOCO_PROJECT"
+loco_do "$@"
+
