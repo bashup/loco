@@ -5,7 +5,7 @@ fn_exists() { [[ "$(type -t "$1")" == "function" ]] ; }
 fn_copy()   { body="$(declare -f $1)"; eval "$2 ${body#$1}"; }
 
 _loco_usage() { loco_error "Usage: $LOCO_COMMAND command args..."; }
-_loco_error() { echo "$@" >&2; exit 1; }
+_loco_error() { echo "$@" >&2; kill -SIGUSR1 $$; exit 1; }
 _loco_cmd() { echo "$LOCO_NAME.$1"; }
 _loco_exec() { loco_error "Unrecognized command: $1"; }
 _loco_exists() { [ -n "$(type -t "$1")" ] ; }
@@ -55,6 +55,7 @@ lvars=$(env -0|cut -z -d '=' -f1|strings|grep ^LOCO_)
 
 # Find our configuration, exposing relevant paths and defaults
 
+trap "exit 1" SIGUSR1
 loco_preconfig "$@"
 
 if [[ $0 != ${BASH_SOURCE[0]} ]]; then
