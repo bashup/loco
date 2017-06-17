@@ -15,16 +15,17 @@ Then running `loco biz baz` in any subdirectory of your project will execute `sp
 
 The `.loco` file is sourced in the shell, so it can define functions, run programs, export variables...  whatever you need to do to make it work.  In addition, you can define certain special functions to change how loco works, define or override various defaults in `~/.locorc` and `/etc/loco/config`, or even rename, symlink, or extend the script to change the names it looks for.
 
-For example, if you want to use `loco` with `docker-compose`, you might create a file like this as `/usr/local/bin/doco`:
+For example, if you want to use `loco` with `docker-compose`, you might create a `doco` script like this and place it on your `PATH`:
 
 ```bash
-#!/bin/bash
+#!/bin/bash -e
+source "$(command -v loco)"
 
 # Pass unrecognized subcommands to docker-compose
 loco_exec() { docker-compose "$@"; }
 
 # Do everything else the usual loco way
-source /usr/local/bin/loco
+loco_main "$@"
 ```
 
 When you run this new `doco` wrapper script, it will:
@@ -42,16 +43,14 @@ But, if all you want to change is the file and function name search patterns, yo
 
 ## Installation and Customization
 
-To install `loco`, just copy it some place on your `PATH`, and start making configuration files or wrapper scripts.  You can change the naming conventions for the site, user, and local configuration files by setting `LOCO_SITE_CONFIG`, `LOCO_RC`, and `LOCO_FILE` within a wrapper script's `loco_preconfig` function before sourcing `loco`.
+To install `loco`, just copy it some place on your `PATH`, and start making configuration files or wrapper scripts.  You can change the naming conventions for the site, user, and local configuration files by setting `LOCO_SITE_CONFIG`, `LOCO_RC`, and `LOCO_FILE` within a wrapper script after sourcing `loco`.  (It has to be *after*, since all `LOCO_` variables are unset during the sourcing.)
 
-For example, if you wanted the `doco` wrapper script to get its site config from `/etc/docker/doco.conf`,  user-level config from `~/doco.conf` and project-level config from `docofile` files (instead of the default `~/.docorc` and `.doco`), you could add these lines to your wrapper script before it sources `loco`:
+For example, if you wanted the `doco` wrapper script to get its site config from `/etc/docker/doco.conf`,  user-level config from `~/doco.conf` and project-level config from `docofile` files (instead of the default `~/.docorc` and `.doco`), you could add these lines to your wrapper script after it sources `loco`:
 
 ```bash
-loco_preconfig() {
-    LOCO_SITE_CONFIG=/etc/docker/doco.conf
-    LOCO_RC=doco.conf
-    LOCO_FILE=docofile
-}
+LOCO_SITE_CONFIG=/etc/docker/doco.conf
+LOCO_RC=doco.conf
+LOCO_FILE=docofile
 ```
 
 (Note that `loco`'s environment variables and internal functions are *always* named `LOCO_` and `loco_` respectively, regardless of the active script name.  Only commands and config file names are based on `loco`'s script name or its wrapper script name.)
@@ -59,7 +58,7 @@ loco_preconfig() {
 `LOCO_FILE`, by the way, can actually be a list of glob patterns: `LOCO_PROJECT` will be set to the absolute path of the first match.  So if our `doco` script set `LOCO_FILE="*.doco.md .doco"`, then each directory would first be checked for any file ending in `.doco.md` before being checked for a `.doco` file.  (Of course, the script would need to override `loco_loadproject()` to be able to handle all the different types of `LOCO_PROJECT` -- more on this below.)
 
 
-### Defining Commands
+## Defining Commands
 
 By default, you define commands in your project, user, site, or global configuration files by defining functions prefixed with `loco`'s script name.  So if your script is named `fudge`, you might define `fudge.melt()` and `fudge.sweeten()` functions which would then be run in your project's root directories (as identified by `.fudge` files), when you type in `fudge melt` or `fudge sweeten`.
 
@@ -69,7 +68,7 @@ The default implementation of `loco_exec()` emits an error message, but you can 
 
 ### Exposed and/or Configurable Variables
 
-There are a wide variety of variables you can set from your configuration files or wrapper scripts, and use in your functions or commands.  When `loco` is initially run or sourced, it unsets all of them before invoking your wrapper's `loco_preconfig()` function (if any).  Your `loco_preconfig` can set initial values for these variables, in which case the set value will be used in place of the defaults.  The site, user, and project configuration files can also also set or override them directly.
+There are a wide variety of variables you can set from your configuration files or wrapper scripts, and use in your functions or commands.  When `loco` is initially run or sourced, it unsets all of them, so it's best to source it at the start of your wrapper.)   Your  wrapper script can then set initial values for these variables, in which case the set value will be used in place of the defaults.  (The site, user, and project configuration files can also also set or override these variables, assuming they're loaded as shell scripts.)
 
 After the default values of everything but `LOCO_PROJECT` and `LOCO_ROOT` have been set, your wrapper script's `loco_postconfig()` function will be called, if it exists.  This gives you a chance to *read* the end result of the configuration process prior to the main process execution.
 
@@ -95,9 +94,13 @@ These functions can be called or overridden from your configuration files.  If y
 
 | Function           | Input(s)       | Default Results                          | Notes                                    |
 | ------------------ | -------------- | ---------------------------------------- | ---------------------------------------- |
-| `loco_preconfig`   | *command line* | no-op                                    | Override to set initial values of `LOCO_*` variables, before the default values are calculated or configuration files are loaded |
-| `loco_postconfig`  | *command line* | no-op                                    | Override to read or change the values of `LOCO_*` variables, after the default values have been calculated and any configuration files were loaded |
-| `loco_findproject` | *command line* | `findup $LOCO_PWD $LOCO_FILE`            | Output the project file path on stdout.  Default implementation uses `findup` and emits an error if the project file isn't found.  Override this to change the way the project file is located. |
+| `loco_main`        | *command line* | invokes `loco_config`, then locates the project root/config file, loads it, and runs the specified subcommand. | Can only be redefined from a wrapper script, since it's already running when config file(s) are loaded |
+| `loco_config`      | *command line* | invokes `loco_preconfig` and `loco_postconfig` before and after calculating the default config file names and locations and loading them. | Can only be redefined from a wrapper script, since it's already running when config file(s) are loaded |
+| `loco_site_config` | *filename*     | `source` *filename*                      | Override in a wrapper script to change how the `LOCO_SITE_CONFIG` file is loaded |
+| `loco_user_config` | *filename*     | `source` *filename*                      | Override in a wrapper script or site config to change how the `LOCO_USER_CONFIG` file is loaded |
+| `loco_preconfig`   | *command line* | no-op                                    | Override in a wrapper script to set initial values of `LOCO_*` variables, before the default values are calculated or configuration files are loaded |
+| `loco_postconfig`  | *command line* | no-op                                    | Override in a wrapper script or user/site config to read or change the values of `LOCO_*` variables, after the default values have been calculated and any configuration files were loaded |
+| `loco_findproject` | *command line* | `findup $LOCO_PWD $LOCO_FILE`            | Output the project file path on stdout.  Default implementation uses `findup` and emits an error if the project file isn't found.  Override this (anywhere but the project file) to change the way the project file is located. |
 | `loco_findroot`    | *command line* | `dirname $LOCO_PROJECT`                  | Output the project root directory on stdout.  Default implementation just uses the directory the project file was found in.  Override this to change the way the project file is located. |
 | `loco_loadproject` | *project-file* | `cd $LOCO_ROOT; $LOCO_SOURCE "$LOCO_PROJECT"` | Change to the project directory, and load the project file. |
 | `loco_usage`       |                | Usage message to stderr; exit errorlevel 1 | Override to provide a more informative message |
@@ -106,6 +109,18 @@ These functions can be called or overridden from your configuration files.  If y
 | `loco_exists`      | *commandname*  | Return truth if *commandname* is an existing function, alias, command, or shell builtin | Can be overridden to validate command existence some other way, but this is mostly useful to force fallback to `loco_exec()` even if a command exists.  (e.g. if you want to only recognize functions, not shell builtins or on-disk commands.) |
 | `loco_exec`        | *command line* | Error message that command isn't recognized | Override this to pass unrecognized commands to a subcommand of, e.g. `rake`, `python setup.py` `docker`, `gulp`, etc. |
 | `loco_do`          | *command line* | Translate first arg with `loco_cmd`, check existence with `loco_exists`, then directly execute or pass to `loco_exec` | It can be useful to invoke this when doing option parsing: just define functions like `loco.--arg()` that set a variable, then `shift` and `loco_do "$@"`. |
+
+
+
+### Utility Functions
+
+These functions can be used in your scripts, but **must not** be redefined, as they are also used internally by loco:
+
+* ``fn_exists` *functionname*  -- succeeds if *functionname* is the name of an existing bash function
+* `fn_copy` *srcfunc* *newname* -- copies the body of *srcfunc* to a new function named *newname*; overwrites *newname* if it already exists.
+* `findup` *dir* *globs...* -- beginning at *dir*, check for the existence of any files matching any of *globs*, and walk upwards to parent directories until a matching file is found or there's nowhere left to go.  On success, outputs the full path of the found file, otherwise nothing is output and failure is returned.
+* `walkup`  *dir cmd args...* -- execute *cmd args...* *dir* for *dir* and every parent of *dir* until *cmd* returns success.  Note that this function does **not** change the current directory (though *cmd* is allowed to) and that when handling the *dir* argument you may need to address the root directory differently than other directories, since it is the only directory argument that will *end* in a slash as well as start with one.
+
 
 
 ## LICENSE
