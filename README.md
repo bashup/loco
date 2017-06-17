@@ -2,7 +2,7 @@
 
 Sometimes, you need some project-specific commands or tasks, like those provided by `npm`, a `Makefile` or `Rakefile`... or maybe just a plain old shell function.
 
-And sometimes, you want to use these commands in a *subdirectory* of your project directory, but still have them execute in the *root* of your project... possibly with some project-specific options.
+And sometimes, you want to invoke these commands from a *subdirectory* of your project directory, but still have them execute in the *root* of your project... possibly with some project-specific options.
 
 So, `loco` is a simple shell script that looks for a project directory at or above your current working directory, reads some project-specific shell variables or functions, and then invokes the remainder of the command line in the matching directory with a customized environment.  For example, if you create the following `.loco` file in your project root:
 
@@ -42,7 +42,7 @@ But, if all you want to change is the file and function name search patterns, yo
 
 ## Installation and Customization
 
-To install `loco`, just copy it some place on your `PATH`, and start making configuration files or wrapper scripts.  You can change the naming conventions for the site, user, and local configuration files by setting `LOCO_SITE_CONFIG`, `LOCO_RC`, and `LOCO_FILE` within a wrapper script before sourcing `loco`.
+To install `loco`, just copy it some place on your `PATH`, and start making configuration files or wrapper scripts.  You can change the naming conventions for the site, user, and local configuration files by setting `LOCO_SITE_CONFIG`, `LOCO_RC`, and `LOCO_FILE` within a wrapper script's `loco_preconfig` function before sourcing `loco`.
 
 For example, if you wanted the `doco` wrapper script to get its site config from `/etc/docker/doco.conf`,  user-level config from `~/doco.conf` and project-level config from `docofile` files (instead of the default `~/.docorc` and `.doco`), you could add these lines to your wrapper script before it sources `loco`:
 
@@ -56,6 +56,9 @@ loco_preconfig() {
 
 (Note that `loco`'s environment variables and internal functions are *always* named `LOCO_` and `loco_` respectively, regardless of the active script name.  Only commands and config file names are based on `loco`'s script name or its wrapper script name.)
 
+`LOCO_FILE`, by the way, can actually be a list of glob patterns: `LOCO_PROJECT` will be set to the absolute path of the first match.  So if our `doco` script set `LOCO_FILE="*.doco.md .doco"`, then each directory would first be checked for any file ending in `.doco.md` before being checked for a `.doco` file.  (Of course, the script would need to override `loco_loadproject()` to be able to handle all the different types of `LOCO_PROJECT` -- more on this below.)
+
+
 ### Defining Commands
 
 By default, you define commands in your project, user, site, or global configuration files by defining functions prefixed with `loco`'s script name.  So if your script is named `fudge`, you might define `fudge.melt()` and `fudge.sweeten()` functions which would then be run in your project's root directories (as identified by `.fudge` files), when you type in `fudge melt` or `fudge sweeten`.
@@ -66,7 +69,7 @@ The default implementation of `loco_exec()` emits an error message, but you can 
 
 ### Exposed and/or Configurable Variables
 
-There are a wide variety of variables you can set from your configuration files or wrapper scripts, and use in your functions or commands.  When `loco` is initially run or sourced, it unsets all of them before invoking your wrapper's `loco_preconfig()` function (if any).  Your `loco_preconfig` can set initial values for these variables, in which case the set value will be used in place of the defaults.  The site, user, and project configuration files can also also set them directly.
+There are a wide variety of variables you can set from your configuration files or wrapper scripts, and use in your functions or commands.  When `loco` is initially run or sourced, it unsets all of them before invoking your wrapper's `loco_preconfig()` function (if any).  Your `loco_preconfig` can set initial values for these variables, in which case the set value will be used in place of the defaults.  The site, user, and project configuration files can also also set or override them directly.
 
 After the default values of everything but `LOCO_PROJECT` and `LOCO_ROOT` have been set, your wrapper script's `loco_postconfig()` function will be called, if it exists.  This gives you a chance to *read* the end result of the configuration process prior to the main process execution.
 
@@ -82,7 +85,7 @@ After the default values of everything but `LOCO_PROJECT` and `LOCO_ROOT` have b
 | `LOCO_RC`          | `.${LOCO_NAME}rc`                        | User-level config file name              |
 | `LOCO_USER_CONFIG` | `$HOME/$LOCO_RC`                         | User-level config file full path         |
 | `LOCO_LOAD`        | `"source"`                               | Command or function used to read project-level config files |
-| `LOCO_FILE`        | `.${LOCO_NAME}`                          | Project-level config file name           |
+| `LOCO_FILE`        | `.${LOCO_NAME}`                          | Space-separated list of globs matching project-level config files. |
 | `LOCO_PROJECT`     | `$(loco_findproject "$@")`               | The found path of the project-level config file (not set until just before `loco_loadproject` is called) |
 | `LOCO_ROOT`        | `$(dirname LOCO_PROJECT)`                | The project root directory, which `loco` will `cd` to before sourcing or reading`$LOCO_PROJECT` |
 
@@ -94,10 +97,9 @@ These functions can be called or overridden from your configuration files.  If y
 | ------------------ | -------------- | ---------------------------------------- | ---------------------------------------- |
 | `loco_preconfig`   | *command line* | no-op                                    | Override to set initial values of `LOCO_*` variables, before the default values are calculated or configuration files are loaded |
 | `loco_postconfig`  | *command line* | no-op                                    | Override to read or change the values of `LOCO_*` variables, after the default values have been calculated and any configuration files were loaded |
-| `loco_findproject` | *command line* | `loco_findup $LOCO_FILE $LOCO_PWD`       | Output the project file path on stdout.  Default implementation uses `loco_findup` and emits an error if the project file isn't found.  Override this to change the way the project file is located. |
+| `loco_findproject` | *command line* | `findup $LOCO_PWD $LOCO_FILE`            | Output the project file path on stdout.  Default implementation uses `findup` and emits an error if the project file isn't found.  Override this to change the way the project file is located. |
 | `loco_findroot`    | *command line* | `dirname $LOCO_PROJECT`                  | Output the project root directory on stdout.  Default implementation just uses the directory the project file was found in.  Override this to change the way the project file is located. |
 | `loco_loadproject` | *project-file* | `cd $LOCO_ROOT; $LOCO_SOURCE "$LOCO_PROJECT"` | Change to the project directory, and load the project file. |
-| `loco_findup`      | *file* *dir*   | Search up from *dir* (default  `$LOCO_PWD`), looking for *file* (default `$LOCO_FILE`).  Outputs full path of found file, or nothing. | Override to change the search algorithm for project-level config files. |
 | `loco_usage`       |                | Usage message to stderr; exit errorlevel 1 | Override to provide a more informative message |
 | `loco_error`       | *message(s)*   | Outputs message to stderr, exit errorlevel 1 | Used by `loco_usage`                     |
 | `loco_cmd`         | *commandname*  | `"$LOCO_NAME.$1"` (e.g. `loco.foo` for an input of `foo`) | Can be overridden to change the subcommand naming convention (e.g. to use a suffix instead of a prefix, `-` instead of `.`, or perhaps pointing to a subdirectory such as `node_modules/.bin`).  Empty output will trigger an error message and early termination. |
@@ -114,5 +116,5 @@ Permission is hereby granted, free of charge, to any person obtaining a copy of 
 
 The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT OWNERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. 
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT OWNERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 

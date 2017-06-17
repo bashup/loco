@@ -1,24 +1,29 @@
-#!/bin/bash
+#!/bin/bash -e
 # For documentation and license, see https://github.com/pjeby/loco
 
 fn_exists() { [[ "$(type -t "$1")" == "function" ]] ; }
 fn_copy()   { body="$(declare -f $1)"; eval "$2 ${body#$1}"; }
+findup() { walkup "${1:-$PWD}" print_if_exists "${@:2}"; }
+
+print_if_exists() {
+    d="${@: -1}"; cd "$d"
+    for f in ${@:1:${#}-1}; do [[ -f "$f" ]] && echo "${d%/}/$f" && return 0; done
+    return 1
+}
+
+walkup() {
+    local d="$(realpath "$1")"
+    until "${@:2}" "$d"; do
+        [[ "$d" != "/" ]] || return 1
+        d="$(dirname "$d")"
+    done
+}
 
 _loco_usage() { loco_error "Usage: $LOCO_COMMAND command args..."; }
 _loco_error() { echo "$@" >&2; kill -SIGUSR1 $$; exit 1; }
 _loco_cmd() { echo "$LOCO_NAME.$1"; }
 _loco_exec() { loco_error "Unrecognized command: $1"; }
 _loco_exists() { [ -n "$(type -t "$1")" ] ; }
-
-# loco_findup file startdir -- outputs full path to found file, or nothing
-_loco_findup() {
-    local f="${1-$LOCO_FILE}"
-    local d="${2-$LOCO_PWD}"
-    if [ "$d" == "/" ]; then [ -f "/$f" ] && echo "/$f"
-    elif [ -f "$d/$f" ]; then echo "$d/$f"
-    else ${FUNCNAME[0]} "$f" "$(dirname "$d")"
-    fi
-}
 
 _loco_do() {
     [ -z "$1" ] && loco_usage   # No command given, exit w/usage
@@ -35,8 +40,9 @@ _loco_do() {
 }
 
 _loco_findproject() {
-    proj="${LOCO_PROJECT-$(loco_findup "$LOCO_FILE" "$LOCO_PWD")}"
-    if [ -z "$proj" ]; then loco_error "Can't find $LOCO_FILE here"; else echo $proj; fi
+    local proj="${LOCO_PROJECT-$(findup "$LOCO_PWD" "$LOCO_FILE")}" \
+    && [[ -n "$proj" ]] && echo $proj \
+    || loco_error "Can't find $LOCO_FILE here";
 }
 
 _loco_preconfig() { true; }
@@ -50,8 +56,7 @@ for f in $(declare -F|cut -d' ' -f3|grep ^_loco_); do
 done
 
 # Clear all LOCO_*  variables before beginning
-lvars=$(env -0|cut -z -d '=' -f1|strings|grep ^LOCO_)
-[ -z "$lvars" ] || "unset $lvars"
+for lv in $(env -0|cut -z -d '=' -f1|strings|grep ^LOCO_); do unset $lv; done
 
 # Find our configuration, exposing relevant paths and defaults
 
@@ -79,6 +84,7 @@ LOCO_FILE="${LOCO_FILE-.$LOCO_NAME}"
 LOCO_LOAD="${LOCO_LOAD-source}"
 
 loco_postconfig "$@"
+
 
 # Finally, run the actual command(s)
 LOCO_PROJECT="${LOCO_PROJECT-$(loco_findproject "$@")}"
