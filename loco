@@ -1,4 +1,4 @@
-#!/bin/bash -e
+#!/bin/bash -eu
 # For documentation and license, see https://github.com/pjeby/loco
 
 fn_exists() { [[ "$(type -t "$1")" == "function" ]] ; }
@@ -26,7 +26,7 @@ _loco_exec() { loco_error "Unrecognized command: $1"; }
 _loco_exists() { [ -n "$(type -t "$1")" ] ; }
 
 _loco_do() {
-    [ -z "$1" ] && loco_usage   # No command given, exit w/usage
+    [ -z "${1-}" ] && loco_usage   # No command given, exit w/usage
     local cmd="$(loco_cmd "$1")"
     [ -z "$cmd" ] && loco_usage   # Unrecognized command, exit w/usage
 
