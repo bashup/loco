@@ -41,6 +41,17 @@ You can also change any of these file naming conventions, behaviors, etc., as ex
 
 But, if all you want to change is the file and function name search patterns, you don't even need a wrapper script: just rename or symlink `loco`, and the resulting script will use its own name to find its configuration files and commands.  (e.g., renaming or symlinking `loco` as `foo` will look for `/etc/foo/config`, `~/.foorc`, `.foo` and `foo.commandname()`.)
 
+In addition, loco automatically defines the script name (`$LOCO_NAME`) as a function (if it doesn't already exist), so that recursive invocation of the script doesn't require a subshell or re-reading all the configuration files.  So in the example above, you could define a function like this:
+
+```shell
+doco.reup() {
+    # Take all services down and back up again
+    doco down && doco up -d
+}
+```
+
+And rather than re-running the script multiple times, the nested `doco` commands will be directly dispatched to the appropriate functions (or `loco_exec()`).  Similarly, if you symlinked `loco` as `foo`, and there is no `foo` function already defined by the script, configuration, or project files, `loco_main` will define a `foo` function to prevent recursive invocation.
+
 ## Installation and Customization
 
 To install `loco`, just copy it some place on your `PATH`, and start making configuration files or wrapper scripts.  You can change the naming conventions for the site, user, and local configuration files by setting `LOCO_SITE_CONFIG`, `LOCO_RC`, and `LOCO_FILE` within a wrapper script after sourcing `loco`.  (It has to be *after*, since all `LOCO_` variables are unset during the sourcing.)
@@ -78,7 +89,7 @@ After the default values of everything but `LOCO_PROJECT` and `LOCO_ROOT` have b
 | ------------------ | ---------------------------------------- | ---------------------------------------- |
 | `LOCO_SCRIPT`      | path to the script (may be relative to `LOCO_PWD`) | If `loco` is sourced, this will be the path to the sourcing script instead |
 | `LOCO_COMMAND`     | `basename $LOCO_SCRIPT`                  | Used in `loco_usage()` message           |
-| `LOCO_NAME`        | `$LOCO_COMMAND`                          | Base name for all configuration files, and command name prefix used by `loco_cmd` |
+| `LOCO_NAME`        | `$LOCO_COMMAND`                          | Base name for all configuration files, and command name prefix used by `loco_cmd`.  If a function of this name doesn't exist after configuration, `loco_main` will define it as a function alias for `loco_do`. |
 | `LOCO_PWD`         | directory the script was invoked from    | Project directory search begins here     |
 | `LOCO_SITE_CONFIG` | `/etc/$LOCO_NAME/config`                 | Full path of site-wide config file       |
 | `LOCO_RC`          | `.${LOCO_NAME}rc`                        | User-level config file name              |

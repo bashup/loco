@@ -54,7 +54,6 @@ _loco_user_config() { source "$1"; }
 trap "exit 1" SIGUSR1
 
 # Find our configuration, exposing relevant paths and defaults
-
 _loco_config() {
     loco_preconfig "$@"
     LOCO_COMMAND="${LOCO_COMMAND-$(basename "$LOCO_SCRIPT")}"
@@ -77,6 +76,7 @@ _loco_main() {
     LOCO_PROJECT="${LOCO_PROJECT-$(loco_findproject "$@")}"
     LOCO_ROOT="${LOCO_ROOT-$(loco_findroot "$@")}"
     loco_loadproject "$LOCO_PROJECT"
+    fn_exists $LOCO_NAME || eval "$LOCO_NAME() { loco_do \"\$@\"; }"
     loco_do "$@"
 }
 
