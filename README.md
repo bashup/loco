@@ -129,7 +129,7 @@ These functions can be called or overridden from your configuration files.  If y
 
 These functions can be used in your scripts, but **must not** be redefined, as they are also used internally by loco:
 
-* ``fn_exists` *functionname*  -- succeeds if *functionname* is the name of an existing bash function
+* `fn_exists` *functionname*  -- succeeds if *functionname* is the name of an existing bash function
 * `fn_copy` *srcfunc* *newname* -- copies the body of *srcfunc* to a new function named *newname*; overwrites *newname* if it already exists.
 * `findup` *dir* *globs...* -- beginning at *dir*, check for the existence of any files matching any of *globs*, and walk upwards to parent directories until a matching file is found or there's nowhere left to go.  On success, outputs the full path of the found file, otherwise nothing is output and failure is returned.
 * `walkup`  *dir cmd args...* -- execute *cmd args...* *dir* for *dir* and every parent of *dir* until *cmd* returns success.  Note that this function does **not** change the current directory (though *cmd* is allowed to) and that when handling the *dir* argument you may need to address the root directory differently than other directories, since it is the only directory argument that will *end* in a slash as well as start with one.
