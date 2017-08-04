@@ -54,7 +54,9 @@ And rather than re-running the script multiple times, the nested `doco` commands
 
 ## Installation and Customization
 
-To install `loco`, just copy it some place on your `PATH`, and start making configuration files or wrapper scripts.  You can change the naming conventions for the site, user, and local configuration files by setting `LOCO_SITE_CONFIG`, `LOCO_RC`, and `LOCO_FILE` within a wrapper script after sourcing `loco`.  (It has to be *after*, since all `LOCO_` variables are unset during the sourcing.)
+To install `loco`, just copy it some place on your `PATH`, and start making configuration files or wrapper scripts.  (If you have [basher](https://github.com/basherpm/basher), you can just `basher install bashup/loco`.)
+
+You can change the naming conventions for the site, user, and local configuration files by setting `LOCO_SITE_CONFIG`, `LOCO_RC`, and `LOCO_FILE` within a wrapper script after sourcing `loco`.  (It has to be *after*, since all `LOCO_` variables are unset during the sourcing.)
 
 For example, if you wanted the `doco` wrapper script to get its site config from `/etc/docker/doco.conf`,  user-level config from `~/doco.conf` and project-level config from `docofile` files (instead of the default `~/.docorc` and `.doco`), you could add these lines to your wrapper script after it sources `loco`:
 

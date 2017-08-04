@@ -86,9 +86,9 @@ for f in $(declare -F|cut -d' ' -f3|grep ^_loco_); do
 done
 
 # Clear all LOCO_*  variables before beginning
-for lv in $(env -0|cut -z -d '=' -f1|strings|grep ^LOCO_); do unset $lv; done
+for lv in ${!LOCO_@}; do unset $lv; done
 
-if [[ $0 != ${BASH_SOURCE[0]} ]]; then
+if [[ "$0" != "${BASH_SOURCE[0]}" ]]; then
     # Sourced as a script; let the other script run main
     LOCO_SCRIPT="${LOCO_SCRIPT-${BASH_SOURCE[1]}}"
 else
