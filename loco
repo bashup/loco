@@ -42,7 +42,7 @@
 # For documentation, see https://github.com/bashup/loco
 set -euo pipefail
 
-fn_exists() { [[ "$(type -t "$1")" == "function" ]] ; }
+fn_exists() { declare -F -- "$1"; } >/dev/null
 fn_copy()   { body="$(declare -f $1)"; eval "$2 ${body#$1}"; }
 findup() { walkup "${1:-$PWD}" print_if_exists "${@:2}"; }
 
@@ -61,7 +61,7 @@ walkup() {
 }
 
 _loco_usage() { loco_error "Usage: $LOCO_COMMAND command args..."; }
-_loco_error() { echo "$@" >&2; kill -SIGUSR1 $$; exit 1; }
+_loco_error() { echo "$@" >&2; kill -SIGUSR1 $$; exit 64; }
 _loco_cmd() { echo "$LOCO_NAME.$1"; }
 _loco_exec() { loco_error "Unrecognized command: $1"; }
 _loco_exists() { [ -n "$(type -t "$1")" ] ; }
@@ -92,7 +92,7 @@ _loco_loadproject() { cd "$LOCO_ROOT";  $LOCO_LOAD "$1"; }
 _loco_site_config() { source "$1"; }
 _loco_user_config() { source "$1"; }
 
-trap "exit 1" SIGUSR1
+trap "exit 64" SIGUSR1
 
 # Find our configuration, exposing relevant paths and defaults
 _loco_config() {
