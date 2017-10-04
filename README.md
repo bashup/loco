@@ -100,6 +100,7 @@ After the default values of everything but `LOCO_PROJECT` and `LOCO_ROOT` have b
 | `LOCO_FILE`        | `.${LOCO_NAME}`                          | Space-separated list of globs matching project-level config files. |
 | `LOCO_PROJECT`     | `$(loco_findproject "$@")`               | The found path of the project-level config file (not set until just before `loco_loadproject` is called) |
 | `LOCO_ROOT`        | `$(dirname LOCO_PROJECT)`                | The project root directory, which `loco` will `cd` to before sourcing or reading`$LOCO_PROJECT` |
+| `LOCO_ARGS`        | `("$@")`                                 | Array of the original arguments passed to `loco_main`, set by `loco_config` just before calling `loco_preconfig`. |
 
 ### Callable and/or Overrideable Functions
 

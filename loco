@@ -96,6 +96,7 @@ trap "exit 64" SIGUSR1
 
 # Find our configuration, exposing relevant paths and defaults
 _loco_config() {
+    LOCO_ARGS=("$@")
     loco_preconfig "$@"
     LOCO_COMMAND="${LOCO_COMMAND-$(basename "$LOCO_SCRIPT")}"
     LOCO_NAME="${LOCO_NAME-${LOCO_COMMAND}}"
