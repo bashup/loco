@@ -7,9 +7,14 @@
 
 # Available modules (uncomment to use):
 
-# import: cram                  # run tests using the "cram" functional test tool
-# import: entr-watch            # watch files and re-run tests or other commands
-# import: shell-console         # make the "console" command enter a subshell
-# import: virtualenv-support    # enable creation and use of Python virtualenvs
+import: cram                  # run tests using the "cram" functional test tool
+import: entr-watch            # watch files and re-run tests or other commands
+import: shell-console         # make the "console" command enter a subshell
 
 # Define overrides, new commands, functions, etc. here:
+
+dk.rebuild() {
+    require-any bashpackr basher install bashup/bashpackr
+    require     realpaths basher install bashup/realpaths
+    bashpackr --pack ./loco bin/loco
+}
