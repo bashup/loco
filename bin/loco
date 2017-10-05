@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 readonly __bpkr_packed=yes
-{ if [[ $OSTYPE != cygwin && -e /dev/fd/0 ]]; then source /dev/fd/0; else source <(cat); fi; } <<'# --- END d6702cbd7094e6332817ae73643e630ce97c687d8e0e0e9e7f6ad62eda062d7f ---'
+{ if [[ $OSTYPE != cygwin && -e /dev/fd/0 ]]; then source /dev/fd/0; else source <(cat); fi; } <<'# --- END a0f52b3e4724b68666c5df200e8fbc966808b2cdfe3ce62b559c2a7b832c68ea ---'
 if [[ ${BASHPACKR_LOADED-} != *\<bashpackr\>* ]]; then BASHPACKR_LOADED+=\<bashpackr\>
 import:()      { is-imported: "$1" || bpkr.__fatal "module '$1' wasn't packed"; }
 main:()        { if [[ $0 == ${BASH_SOURCE[1]} ]]; then "$@"; exit $?; fi; }
@@ -84,9 +84,9 @@ realpath.relative() {
 }
 
 fi
-# --- END d6702cbd7094e6332817ae73643e630ce97c687d8e0e0e9e7f6ad62eda062d7f ---
+# --- END a0f52b3e4724b68666c5df200e8fbc966808b2cdfe3ce62b559c2a7b832c68ea ---
 #!/usr/bin/env bashpackr
-
+# ex: set ft=bash :
 # LICENSE
 # -------
 #
