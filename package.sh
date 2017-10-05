@@ -1,1 +1,1 @@
-BINS=loco
+BINS=bin/loco

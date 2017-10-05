@@ -1,0 +1,141 @@
+#!/usr/bin/env bash
+
+# LICENSE
+# -------
+#
+# `loco` is copyright 2015-2017 PJ Eby,
+# and MIT-licensed as follows:
+#
+# Permission is hereby granted, free of
+# charge, to any person obtaining a copy
+# of this software and associated
+# documentation files (the "Software"),
+# to deal in the Software without
+# restriction, including without
+# limitation the rights to use, copy,
+# modify, merge, publish, distribute,
+# sublicense, and/or sell copies of the
+# Software, and to permit persons to
+# whom the Software is furnished to do
+# so, subject to the following
+# conditions:
+#
+# The above copyright notice and this
+# permission notice shall be included in
+# all copies or substantial portions of
+# the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS",
+# WITHOUT WARRANTY OF ANY KIND, EXPRESS
+# OR IMPLIED, INCLUDING BUT NOT LIMITED
+# TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND
+# NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT OWNERS BE LIABLE
+# FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF
+# CONTRACT, TORT OR OTHERWISE, ARISING
+# FROM, OUT OF OR IN CONNECTION WITH THE
+# SOFTWARE OR THE USE OR OTHER DEALINGS
+# IN THE SOFTWARE.
+
+# For documentation, see https://github.com/bashup/loco
+set -euo pipefail
+
+fn_exists() { declare -F -- "$1"; } >/dev/null
+fn_copy()   { body="$(declare -f $1)"; eval "$2 ${body#$1}"; }
+findup() { walkup "${1:-$PWD}" print_if_exists "${@:2}"; }
+
+print_if_exists() {
+    d="${@: -1}"; cd "$d"
+    for f in ${@:1:${#}-1}; do [[ -f "$f" ]] && echo "${d%/}/$f" && return 0; done
+    return 1
+}
+
+walkup() {
+    local d="$(realpath "$1")"
+    until "${@:2}" "$d"; do
+        [[ "$d" != "/" ]] || return 1
+        d="$(dirname "$d")"
+    done
+}
+
+_loco_usage() { loco_error "Usage: $LOCO_COMMAND command args..."; }
+_loco_error() { echo "$@" >&2; kill -SIGUSR1 $$; exit 64; }
+_loco_cmd() { echo "$LOCO_NAME.$1"; }
+_loco_exec() { loco_error "Unrecognized command: $1"; }
+_loco_exists() { [ -n "$(type -t "$1")" ] ; }
+
+_loco_do() {
+    [ -z "${1-}" ] && loco_usage   # No command given, exit w/usage
+    local cmd="$(loco_cmd "$1")"
+    [ -z "$cmd" ] && loco_usage   # Unrecognized command, exit w/usage
+
+    if loco_exists "$cmd"; then
+        # Command, alias, function, or builtin exists
+        shift; "$cmd" "$@"
+    else
+        # Invoke the default command interpreter
+        loco_exec "$@"
+    fi
+}
+
+_loco_findproject() {
+    local proj="${LOCO_PROJECT-$(findup "$LOCO_PWD" "$LOCO_FILE")}" \
+    && [[ -n "$proj" ]] && echo $proj \
+    || loco_error "Can't find $LOCO_FILE here";
+}
+_loco_preconfig() { true; }
+_loco_postconfig() { true; }
+_loco_findroot() { dirname "$LOCO_PROJECT"; }
+_loco_loadproject() { cd "$LOCO_ROOT";  $LOCO_LOAD "$1"; }
+_loco_site_config() { source "$1"; }
+_loco_user_config() { source "$1"; }
+
+trap "exit 64" SIGUSR1
+
+# Find our configuration, exposing relevant paths and defaults
+_loco_config() {
+    LOCO_ARGS=("$@")
+    loco_preconfig "$@"
+    LOCO_COMMAND="${LOCO_COMMAND-$(basename "$LOCO_SCRIPT")}"
+    LOCO_NAME="${LOCO_NAME-${LOCO_COMMAND}}"
+    LOCO_PWD="${LOCO_PWD-$PWD}"
+
+    LOCO_SITE_CONFIG="${LOCO_SITE_CONFIG-/etc/$LOCO_NAME/config}"
+    [ -f "$LOCO_SITE_CONFIG" ] && loco_site_config "$LOCO_SITE_CONFIG"
+    LOCO_RC="${LOCO_RC-.${LOCO_NAME}rc}"
+    LOCO_USER_CONFIG="${LOCO_USER_CONFIG-$HOME/$LOCO_RC}"
+    [ -f "$LOCO_USER_CONFIG" ] && loco_user_config "$LOCO_USER_CONFIG"
+
+    LOCO_FILE="${LOCO_FILE-.$LOCO_NAME}"
+    LOCO_LOAD="${LOCO_LOAD-source}"
+    loco_postconfig "$@"
+}
+
+_loco_main() {
+    loco_config "$@"
+    LOCO_PROJECT="${LOCO_PROJECT-$(loco_findproject "$@")}"
+    LOCO_ROOT="${LOCO_ROOT-$(loco_findroot "$@")}"
+    loco_loadproject "$LOCO_PROJECT"
+    fn_exists $LOCO_NAME || eval "$LOCO_NAME() { loco_do \"\$@\"; }"
+    loco_do "$@"
+}
+
+# Initialize default function implementations
+for f in $(declare -F|cut -d' ' -f3|grep ^_loco_); do
+    fn_exists "${f#_}" || fn_copy "$f" "${f#_}"
+done
+
+# Clear all LOCO_*  variables before beginning
+for lv in ${!LOCO_@}; do unset $lv; done
+
+if [[ "$0" != "${BASH_SOURCE[0]}" ]]; then
+    # Sourced as a script; let the other script run main
+    LOCO_SCRIPT="${LOCO_SCRIPT-${BASH_SOURCE[1]}}"
+else
+    LOCO_SCRIPT="${LOCO_SCRIPT-${BASH_SOURCE[0]}}"
+    loco_main "$@"
+    exit $?
+fi
+
