@@ -54,7 +54,7 @@ And rather than re-running the script multiple times, the nested `doco` commands
 
 ## Installation and Customization
 
-To install `loco`, just copy it some place on your `PATH`, and start making configuration files or wrapper scripts.  (If you have [basher](https://github.com/basherpm/basher), you can just `basher install bashup/loco`.)
+To install `loco`, just [download bin/loco](https://github.com/bashup/loco/raw/master/bin/loco) to some directory on your `PATH`, and start making configuration files or wrapper scripts.  (If you have [basher](https://github.com/basherpm/basher), you can just `basher install bashup/loco`.)
 
 You can change the naming conventions for the site, user, and local configuration files by setting `LOCO_SITE_CONFIG`, `LOCO_RC`, and `LOCO_FILE` within a wrapper script after sourcing `loco`.  (It has to be *after*, since all `LOCO_` variables are unset during the sourcing.)
 
