@@ -68,7 +68,7 @@ LOCO_FILE=docofile
 
 (Note that `loco`'s environment variables and internal functions are *always* named `LOCO_` and `loco_` respectively, regardless of the active script name.  Only commands and config file names are based on `loco`'s script name or its wrapper script name.)
 
-`LOCO_FILE`, by the way, can actually be a list of glob patterns: `LOCO_PROJECT` will be set to the absolute path of the first match.  So if our `doco` script set `LOCO_FILE="*.doco.md .doco"`, then each directory would first be checked for any file ending in `.doco.md` before being checked for a `.doco` file.  (Of course, the script would need to override `loco_loadproject()` to be able to handle all the different types of `LOCO_PROJECT` -- more on this below.)
+`LOCO_FILE`, by the way, can actually be an array of glob patterns: `LOCO_PROJECT` will be set to the absolute path of the first match.  So if our `doco` script set `LOCO_FILE=("*.doco.md" ".doco")`, then each directory would first be checked for any file ending in `.doco.md` before being checked for a `.doco` file.  (Of course, the script would need to override `loco_loadproject()` to be able to handle all the different types of `LOCO_PROJECT` -- more on this below.)
 
 
 ## Defining Commands
@@ -97,7 +97,7 @@ After the default values of everything but `LOCO_PROJECT` and `LOCO_ROOT` have b
 | `LOCO_RC`          | `.${LOCO_NAME}rc`                        | User-level config file name              |
 | `LOCO_USER_CONFIG` | `$HOME/$LOCO_RC`                         | User-level config file full path         |
 | `LOCO_LOAD`        | `"source"`                               | Command or function used to read project-level config files |
-| `LOCO_FILE`        | `(.${LOCO_NAME})`                        | Array of globs matching project-level config files. |
+| `LOCO_FILE`        | `(".${LOCO_NAME}")`                      | Array of globs matching project-level config files. |
 | `LOCO_PROJECT`     | `$(loco_findproject "$@")`               | The found path of the project-level config file (not set until just before `loco_loadproject` is called) |
 | `LOCO_ROOT`        | `$(dirname LOCO_PROJECT)`                | The project root directory, which `loco` will `cd` to before sourcing or reading`$LOCO_PROJECT` |
 | `LOCO_ARGS`        | `("$@")`                                 | Array of the original arguments passed to `loco_main`, set by `loco_config` just before calling `loco_preconfig`. |
@@ -114,7 +114,7 @@ These functions can be called or overridden from your configuration files.  If y
 | `loco_user_config` | *filename*     | `source` *filename*                      | Override in a wrapper script or site config to change how the `LOCO_USER_CONFIG` file is loaded |
 | `loco_preconfig`   | *command line* | no-op                                    | Override in a wrapper script to set initial values of `LOCO_*` variables, before the default values are calculated or configuration files are loaded |
 | `loco_postconfig`  | *command line* | no-op                                    | Override in a wrapper script or user/site config to read or change the values of `LOCO_*` variables, after the default values have been calculated and any configuration files were loaded |
-| `loco_findproject` | *command line* | `findup $LOCO_PWD $LOCO_FILE && LOCO_PROJECT=$REPLY` | Set `LOCO_PROJECT` to the project file path.  Default implementation uses `findup` and emits an error if the project file isn't found.  Override this (anywhere but the project file) to change the way the project file is located. |
+| `loco_findproject` | *command line* | `findup "$LOCO_PWD" "${LOCO_FILE[@]}" && LOCO_PROJECT=$REPLY` | Set `LOCO_PROJECT` to the project file path.  Default implementation uses `findup` and emits an error if the project file isn't found.  Override this (anywhere but the project file) to change the way the project file is located. |
 | `loco_findroot`    | *command line* | `LOCO_ROOT=$(dirname $LOCO_PROJECT)`     | Set `LOCO_ROOT` to the project root.  Default implementation just uses the directory the project file was found in.  Override this to change the way the project directory is located. |
 | `loco_loadproject` | *project-file* | `cd $LOCO_ROOT; $LOCO_SOURCE "$LOCO_PROJECT"` | Change to the project directory, and load the project file. |
 | `loco_usage`       |                | Usage message to stderr; exit errorlevel 64 | Override to provide a more informative message |
