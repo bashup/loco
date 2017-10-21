@@ -85,7 +85,7 @@ _loco_user_config() { source "$1"; }
 _loco_config() {
     LOCO_ARGS=("$@")
     loco_preconfig "$@"
-    ${LOCO_COMMAND:+:} realpath.basename "$LOCO_SCRIPT"; LOCO_COMMAND="$REPLY"
+    ${LOCO_COMMAND:+:} realpath.basename "$LOCO_SCRIPT"; LOCO_COMMAND="${LOCO_COMMAND-$REPLY}"
     LOCO_NAME="${LOCO_NAME-${LOCO_COMMAND}}"
     LOCO_PWD="${LOCO_PWD-$PWD}"
 

@@ -1,15 +1,16 @@
 #!/usr/bin/env bash
 readonly __bpkr_packed=yes
-{ if [[ $OSTYPE != cygwin && $OSTYPE != msys && -e /dev/fd/0 ]]; then source /dev/fd/0; else source <(cat); fi; } <<'# --- END f06bc4aef42b673a28c5a31700c378abd3b1092e96d040d4bf723b702df2c692 ---'
 if [[ ${BASHPACKR_LOADED-} != *\<bashpackr\>* ]]; then BASHPACKR_LOADED+=\<bashpackr\>
-import:()      { is-imported: "$1" || bpkr.__fatal "module '$1' wasn't packed"; }
+import:()      { while (($#)); do is-imported: "$1" || bpkr.__fatal "module '$1' wasn't packed"; shift; done; }
 main:()        { if [[ $0 == ${BASH_SOURCE[1]} ]]; then "$@"; exit $?; fi; }
 pack-with:()   { :; }  # No-op at runtime of packed scripts
 can-import:()  { is-imported: "$1"; }  # can't import what isn't packed
 is-imported:() { [[ ${BASHPACKR_LOADED-} == *"<$1>"* ]]; }
 bpkr.__fatal() { echo "bashpackr: fatal error: " "$1" >&2; exit ${2-70}; }
+bpkr.__embed() { if [[ $OSTYPE != cygwin && $OSTYPE != msys && -e /dev/fd/0 ]]; then source /dev/fd/0; else source <(cat); fi; }
 fi
 if [[ ${BASHPACKR_LOADED-} != *\<realpaths\>* ]]; then BASHPACKR_LOADED+=\<realpaths\>
+bpkr.__embed <<'# --- EOF realpaths ---'
 #!/usr/bin/env bash
 
 realpath.location()  { realpath.follow "$1"; realpath.absolute "$REPLY" ".."; }
@@ -82,9 +83,8 @@ realpath.relative() {
     [[ $1 == "$REPLY" ]] && REPLY=${target%/} || REPLY="$target${1#${REPLY%/}/}"
     REPLY=${REPLY:-.}
 }
-
+# --- EOF realpaths ---
 fi
-# --- END f06bc4aef42b673a28c5a31700c378abd3b1092e96d040d4bf723b702df2c692 ---
 #!/usr/bin/env bash
 ${BASHPACKR_LOADED:+:} source bashpackr || exit
 
@@ -172,7 +172,7 @@ _loco_user_config() { source "$1"; }
 _loco_config() {
     LOCO_ARGS=("$@")
     loco_preconfig "$@"
-    ${LOCO_COMMAND:+:} realpath.basename "$LOCO_SCRIPT"; LOCO_COMMAND="$REPLY"
+    ${LOCO_COMMAND:+:} realpath.basename "$LOCO_SCRIPT"; LOCO_COMMAND="${LOCO_COMMAND-$REPLY}"
     LOCO_NAME="${LOCO_NAME-${LOCO_COMMAND}}"
     LOCO_PWD="${LOCO_PWD-$PWD}"
 
