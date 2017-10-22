@@ -28,7 +28,7 @@ ${BASHPACKR_LOADED:+:} source bashpackr || exit
 set -euo pipefail
 
 fn_exists() { declare -F -- "$1"; } >/dev/null
-fn_copy()   { body="$(declare -f $1)"; eval "$2 ${body#$1}"; }
+fn_copy()   { REPLY="$(declare -f $1)"; eval "$2 ${REPLY#$1}"; }
 findup()    { walkup "${1:-$PWD}" reply_if_exists "${@:2}"; }
 
 reply_if_exists() {
