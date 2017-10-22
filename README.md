@@ -10,7 +10,6 @@
   * [Exposed and/or Configurable Variables](#exposed-andor-configurable-variables)
   * [Callable and/or Overrideable Functions](#callable-andor-overrideable-functions)
   * [Utility Functions](#utility-functions)
-- [LICENSE](#license)
 
 <!-- tocstop -->
 
@@ -153,15 +152,4 @@ These functions can be used in your scripts, but **must not** be redefined, as t
 
 
 loco also bundles the [realpaths](https://github.com/bashup/realpaths) module, so all of its path-manipulation functions are also available.
-
-
-## LICENSE
-
-`loco` is copyright 2015-2017 PJ Eby, and MIT-licensed as follows:
-
-Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT OWNERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
