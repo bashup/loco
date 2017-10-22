@@ -1,5 +1,21 @@
 # LOcally-configured COmmands with `loco`
 
+**Contents**
+
+<!-- toc -->
+
+- [Overview](#overview)
+- [Installation and Customization](#installation-and-customization)
+- [Defining Commands](#defining-commands)
+  * [Exposed and/or Configurable Variables](#exposed-andor-configurable-variables)
+  * [Callable and/or Overrideable Functions](#callable-andor-overrideable-functions)
+  * [Utility Functions](#utility-functions)
+- [LICENSE](#license)
+
+<!-- tocstop -->
+
+## Overview
+
 Sometimes, you need some project-specific commands or tasks, like those provided by `npm`, a `Makefile` or `Rakefile`... or maybe just a plain old shell function.
 
 And sometimes, you want to invoke these commands from a *subdirectory* of your project directory, but still have them execute in the *root* of your project... possibly with some project-specific options.
