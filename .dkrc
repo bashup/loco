@@ -13,8 +13,9 @@ dk use: shell-console         # make the "console" command enter a subshell
 
 # Define overrides, new commands, functions, etc. here:
 
+require realpaths basher install bashup/realpaths
+
 dk.rebuild() {
-    require-any bashpackr basher install bashup/bashpackr
-    require     realpaths basher install bashup/realpaths
-    bashpackr --pack ./loco bin/loco
+    cat .deps/bin/realpaths ./loco >bin/loco
+    chmod +x bin/loco
 }

@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-${BASHPACKR_LOADED:+:} source bashpackr || exit
 
 # LICENSE
 # -------
@@ -25,6 +24,7 @@ ${BASHPACKR_LOADED:+:} source bashpackr || exit
 # IN THE SOFTWARE.
 
 # For documentation, see https://github.com/bashup/loco
+
 set -euo pipefail
 
 fn_exists() { declare -F -- "$1"; } >/dev/null
@@ -39,7 +39,7 @@ reply_if_exists() {
     return 1
 }
 
-import: realpaths
+fn_exists realpath.absolute || source realpaths
 
 walkup() {
     realpath.absolute "$1"
