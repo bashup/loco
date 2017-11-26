@@ -65,7 +65,7 @@ doco.reup() {
 }
 ```
 
-And rather than re-running the script multiple times, the nested `doco` commands will be directly dispatched to the appropriate functions (or `loco_exec()`).  Similarly, if you symlinked `loco` as `foo`, and there is no `foo` function already defined by the script, configuration, or project files, `loco_main` will define a `foo` function to prevent recursive invocation.
+And rather than re-running the script multiple times, the nested `doco` commands will be directly dispatched to the appropriate functions (or `loco_exec()`).  Similarly, if you symlinked `loco` as `foo`, and there is no `foo` function already defined by the script or configuration files, `loco_main` will define a `foo` function to prevent recursive invocation.
 
 ## Installation and Customization
 
