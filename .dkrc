@@ -14,8 +14,8 @@ dk use: shell-console         # make the "console" command enter a subshell
 # Define overrides, new commands, functions, etc. here:
 
 require realpaths basher install bashup/realpaths
+require mdsh      basher install bashup/mdsh
 
-dk.rebuild() {
-    cat .deps/bin/realpaths ./loco >bin/loco
-    chmod +x bin/loco
+dk.build() {
+     mdsh --out bin/loco --compile loco.md && chmod +x bin/loco;
 }

@@ -170,5 +170,3 @@ for lv in ${!LOCO_@}; do unset $lv; done
 
 LOCO_SCRIPT=$0
 if [[ $0 == "$BASH_SOURCE" ]]; then loco_main "$@"; fi
-
-

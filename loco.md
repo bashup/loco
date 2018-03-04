@@ -1,3 +1,8 @@
+```shell mdsh main
+mdsh-module bashup/realpaths cat "$BASHER_INSTALL_BIN/realpaths"
+```
+
+```shell
 #!/usr/bin/env bash
 
 # LICENSE
@@ -121,3 +126,4 @@ LOCO_SCRIPT=$0
 if [[ $0 == "$BASH_SOURCE" ]]; then loco_main "$@"; fi
 
 
+```
