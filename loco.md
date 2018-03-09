@@ -1,6 +1,6 @@
 ```shell mdsh
 @module loco.md
-@comment LICENSE
+@import pjeby/license @comment LICENSE
 @import bashup/realpaths cat "$BASHER_INSTALL_BIN/realpaths"
 ```
 
