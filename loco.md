@@ -1,7 +1,9 @@
 ```shell mdsh
 @module loco.md
-@import pjeby/license @comment LICENSE
-@import bashup/realpaths cat "$BASHER_INSTALL_BIN/realpaths"
+@main loco_main
+
+@require pjeby/license @comment LICENSE
+@require bashup/realpaths cat "$BASHER_INSTALL_BIN/realpaths"
 ```
 
 ```shell
@@ -100,6 +102,3 @@ for lv in ${!LOCO_@}; do unset $lv; done
 LOCO_SCRIPT=$0
 ```
 
-```shell mdsh
-@main loco_main
-```
