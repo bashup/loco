@@ -12,7 +12,7 @@
 set -euo pipefail
 
 fn_exists() { declare -F -- "$1"; } >/dev/null
-fn_copy()   { REPLY="$(declare -f $1)"; eval "$2 ${REPLY#$1}"; }
+fn_copy()   { REPLY="$(declare -f "$1")"; eval "$2 ${REPLY#$1}"; }
 findup()    { walkup "${1:-$PWD}" reply_if_exists "${@:2}"; }
 
 reply_if_exists() {
@@ -51,6 +51,7 @@ _loco_do() {
 }
 
 _loco_findproject() {
+    # shellcheck disable=SC2015  # plain var assign can't be false
     findup "$LOCO_PWD" "${LOCO_FILE[@]}" && LOCO_PROJECT=$REPLY ||
         loco_error "Can't find $LOCO_FILE here";
 }
@@ -64,6 +65,7 @@ _loco_user_config() { source "$1"; }
 
 # Find our configuration, exposing relevant paths and defaults
 
+# shellcheck disable=SC2034  # some vars are only used by extending scripts
 _loco_config() {
     LOCO_ARGS=("$@")
     loco_preconfig "$@"
@@ -84,7 +86,7 @@ _loco_config() {
 
 _loco_main() {
     loco_config "$@"
-    fn_exists $LOCO_NAME || eval "$LOCO_NAME() { loco_do \"\$@\"; }"
+    fn_exists "$LOCO_NAME" || eval "$LOCO_NAME() { loco_do \"\$@\"; }"
     ${LOCO_PROJECT:+:} loco_findproject "$@"
     ${LOCO_ROOT:+:}    loco_findroot "$@"
     loco_loadproject "$LOCO_PROJECT"
@@ -97,7 +99,7 @@ for f in $(compgen -A function _loco_); do
 done
 
 # Clear all LOCO_*  variables before beginning
-for lv in ${!LOCO_@}; do unset $lv; done
+for lv in ${!LOCO_@}; do unset "$lv"; done
 
 LOCO_SCRIPT=$0
 ```

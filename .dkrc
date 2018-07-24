@@ -7,15 +7,20 @@
 
 # Available modules (uncomment to use):
 
-dk use: cram                  # run tests using the "cram" functional test tool
+#dk use: cram                  # run tests using the "cram" functional test tool
 dk use: entr-watch            # watch files and re-run tests or other commands
 dk use: shell-console         # make the "console" command enter a subshell
+dk use: shellcheck            # support running shellcheck (via docker if not installed)
 
 # Define overrides, new commands, functions, etc. here:
 
 require realpaths basher install bashup/realpaths
 require mdsh      basher install bashup/mdsh
 
-dk.build() {
-     mdsh --out bin/loco --compile loco.md && chmod +x bin/loco;
-}
+# SC1090 = dynamic 'source' command
+SHELLCHECK_OPTS='-e SC1090'
+
+on test eval 'dk shellcheck /dev/stdin < <(mdsh --compile loco.md)'
+
+on build mdsh --out bin/loco --compile loco.md
+on build chmod +x bin/loco
